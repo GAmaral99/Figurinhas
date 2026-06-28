@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#009C3B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Figurinhas">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>🏆 Figurinhas Copa 2026</title>
+<style>
+:root {
+  --verde: #009C3B;
+  --amarelo: #FFDF00;
+  --azul: #002776;
+  --cinza: #f0f0f0;
+  --cinza2: #d0d0d0;
+  --texto: #1a1a1a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f5f5f5;
+  color: var(--texto);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+header {
+  background: linear-gradient(135deg, var(--verde) 0%, var(--azul) 100%);
+  color: white;
+  padding: env(safe-area-inset-top, 18px) 16px 14px;
+  padding-top: max(env(safe-area-inset-top), 18px);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+header h1 { font-size: 1.15rem; font-weight: 800; }
+header p { font-size: 0.76rem; opacity: 0.85; margin-top: 2px; }
+.stats-bar { display: flex; gap: 8px; margin-top: 10px; }
+.stat {
+  background: rgba(255,255,255,0.15); border-radius: 8px;
+  padding: 4px 6px; font-size: 0.72rem; font-weight: 700;
+  flex: 1; text-align: center;
+}
+.stat span { display: block; font-size: 1rem; }
+
+.tabs {
+  display: flex; background: white;
+  border-bottom: 2px solid var(--cinza);
+  position: sticky; top: 108px; z-index: 99;
+}
+.tab {
+  flex: 1; padding: 10px 2px; text-align: center;
+  font-size: 0.75rem; font-weight: 700;
+  border: none; background: none; cursor: pointer; color: #888;
+  border-bottom: 3px solid transparent; transition: all 0.2s;
+  position: relative;
+}
+.tab.active { color: var(--verde); border-bottom-color: var(--verde); }
+.tab-dot {
+  position: absolute; top: 5px; right: 6px;
+  width: 7px; height: 7px; background: #f44336;
+  border-radius: 50%; display: none;
+}
+.tab-dot.show { display: block; }
+
+.search-wrap {
+  padding: 10px 12px 6px; background: white;
+  border-bottom: 1px solid var(--cinza);
+}
+.search-wrap input {
+  width: 100%; padding: 8px 12px;
+  border: 1.5px solid var(--cinza2); border-radius: 20px;
+  font-size: 0.9rem; outline: none;
+}
+.search-wrap input:focus { border-color: var(--verde); }
+
+.content { padding: 10px 10px 90px; }
+
+.section { margin-bottom: 10px; }
+.section-header {
+  background: white; border-radius: 10px 10px 0 0;
+  padding: 10px 14px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--cinza); cursor: pointer; user-select: none;
+}
+.section-title { font-weight: 800; font-size: 0.92rem; display: flex; align-items: center; gap: 6px; }
+.section-count {
+  font-size: 0.72rem; background: var(--cinza); border-radius: 10px;
+  padding: 2px 8px; font-weight: 700; color: #555;
+}
+.section-count.has { background: #fff3cd; color: #856404; }
+.chevron { font-size: 0.8rem; color: #aaa; transition: transform 0.2s; margin-left: 4px; }
+.section.collapsed .chevron { transform: rotate(-90deg); }
+.section.collapsed .stickers-grid { display: none; }
+
+.stickers-grid {
+  background: white; border-radius: 0 0 10px 10px;
+  padding: 8px 10px 10px; display: flex; flex-wrap: wrap; gap: 6px;
+}
+.sticker {
+  border-radius: 8px; padding: 5px 8px; font-size: 0.78rem; font-weight: 700;
+  border: 2px solid transparent; cursor: pointer; transition: all 0.15s;
+  min-width: 50px; text-align: center; user-select: none;
+}
+.sticker.faltando { background: #fff0f0; border-color: #f5c6c6; color: #c0392b; }
+.sticker.faltando:active { transform: scale(0.93); }
+.sticker.repetida { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+.sticker.repetida:active { transform: scale(0.93); }
+.sticker.ok { background: var(--cinza); border-color: var(--cinza2); color: #aaa; text-decoration: line-through; opacity: 0.5; }
+.sticker .qtd {
+  display: inline-block; background: var(--verde); color: white;
+  border-radius: 5px; font-size: 0.62rem; padding: 0 3px; margin-left: 2px; font-weight: 900;
+}
+
+/* ── BOTTOM SHEET ── */
+.backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; }
+.backdrop.open { display: block; }
+.sheet {
+  position: fixed; bottom: -100%; left: 0; right: 0;
+  background: white; border-radius: 18px 18px 0 0; z-index: 201;
+  padding: 20px 20px 40px;
+  transition: bottom 0.3s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+  max-height: 80vh; overflow-y: auto;
+}
+.sheet.open { bottom: 0; }
+.sheet h3 { font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+.sheet p { font-size: 0.82rem; color: #888; margin-bottom: 14px; }
+.sheet-actions { display: flex; flex-direction: column; gap: 9px; }
+.btn {
+  width: 100%; padding: 13px; border: none; border-radius: 12px;
+  font-size: 0.92rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+}
+.btn:active { opacity: 0.8; }
+.btn-faltando { background: #fff0f0; color: #c0392b; border: 2px solid #f5c6c6; }
+.btn-repetida { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+.btn-ok       { background: var(--cinza); color: #555; border: 2px solid var(--cinza2); }
+.btn-plus     { background: var(--verde); color: white; }
+.btn-minus    { background: #ff7043; color: white; }
+.btn-cancel   { background: #f5f5f5; color: #777; }
+
+/* ── FAB ── */
+.fab {
+  position: fixed; bottom: 22px; right: 18px;
+  background: var(--amarelo); color: var(--azul);
+  border: none; border-radius: 50%; width: 56px; height: 56px;
+  font-size: 1.4rem; box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  cursor: pointer; z-index: 150; display: flex; align-items: center; justify-content: center;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 24px;
+  font-size: 0.85rem; font-weight: 600; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s; z-index: 400; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+
+/* ── MODAIS ── */
+.modal {
+  display: none; position: fixed; inset: 0;
+  z-index: 500; background: rgba(0,0,0,0.55); align-items: flex-end;
+}
+.modal.open { display: flex; }
+.modal-box {
+  background: white; border-radius: 18px 18px 0 0;
+  padding: 20px 18px 44px; width: 100%; max-height: 85vh; overflow-y: auto;
+}
+.modal-box h3 { font-size: 1rem; font-weight: 800; margin-bottom: 10px; }
+.share-text {
+  background: #f5f5f5; border-radius: 10px; padding: 12px;
+  font-size: 0.76rem; font-family: monospace; max-height: 220px;
+  overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+  margin-bottom: 12px; border: 1px solid #ddd;
+}
+.row-btns { display: flex; gap: 8px; }
+.row-btns .btn { flex: 1; font-size: 0.82rem; padding: 11px; }
+
+/* ── ABA TROCAR ── */
+.troca-wrap { padding: 12px 10px 90px; }
+.troca-label { font-size: 0.82rem; color: #555; font-weight: 600; margin-bottom: 8px; }
+.troca-textarea {
+  width: 100%; min-height: 130px;
+  border: 2px solid var(--cinza2); border-radius: 12px;
+  padding: 12px; font-size: 0.85rem; font-family: monospace;
+  resize: vertical; outline: none; background: #fafafa;
+}
+.troca-textarea:focus { border-color: var(--verde); background: white; }
+.troca-analyze-btn {
+  width: 100%; margin-top: 10px; padding: 13px;
+  background: var(--verde); color: white;
+  border: none; border-radius: 12px; font-size: 1rem; font-weight: 800; cursor: pointer;
+}
+.troca-clear-btn {
+  width: 100%; margin-top: 6px; padding: 10px;
+  background: #f5f5f5; color: #888; border: none; border-radius: 12px;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.troca-result { margin-top: 14px; }
+.troca-summary { display: flex; gap: 8px; margin-bottom: 12px; }
+.troca-stat {
+  flex: 1; border-radius: 10px; padding: 10px 6px;
+  text-align: center; font-weight: 800; font-size: 0.75rem;
+}
+.troca-stat span { display: block; font-size: 1.25rem; margin-bottom: 2px; }
+.troca-stat.match { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+.troca-stat.miss  { background: #fff8e1; color: #856404; border: 2px solid #ffe082; }
+.troca-stat.none  { background: #f5f5f5; color: #999;    border: 2px solid #ddd; }
+
+.match-section { margin-bottom: 8px; background: white; border-radius: 10px; overflow: hidden; }
+.match-section-hdr {
+  padding: 8px 12px; font-size: 0.82rem; font-weight: 800;
+  display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--cinza);
+}
+.match-section-hdr .badge {
+  margin-left: auto; font-size: 0.7rem;
+  background: #e8f5e9; color: #2e7d32; border-radius: 8px; padding: 2px 8px;
+}
+.match-chips { padding: 8px 10px 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* chip "eu preciso" com botão Recebi */
+.chip-recebi {
+  display: flex; align-items: center; gap: 0;
+  border-radius: 8px; overflow: hidden;
+  border: 2px solid #a5d6a7; font-size: 0.78rem; font-weight: 700;
+}
+.chip-recebi .chip-id {
+  background: #e8f5e9; color: #2e7d32;
+  padding: 5px 7px; min-width: 38px; text-align: center;
+}
+.chip-recebi .chip-btn {
+  background: var(--verde); color: white;
+  border: none; padding: 5px 7px; cursor: pointer;
+  font-size: 0.7rem; font-weight: 800; white-space: nowrap;
+}
+.chip-recebi .chip-btn:active { background: #007a2f; }
+.chip-recebi.done .chip-id { background: #c8e6c9; color: #888; text-decoration: line-through; }
+.chip-recebi.done .chip-btn { background: #bbb; cursor: default; }
+
+.chip-blue {
+  background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9;
+  border-radius: 8px; padding: 5px 9px; font-size: 0.78rem; font-weight: 700;
+}
+.troca-hint { font-size: 0.76rem; color: #aaa; margin-top: 10px; text-align: center; }
+
+/* ── ABA HISTÓRICO ── */
+.hist-wrap { padding: 12px 10px 90px; }
+.hist-day { margin-bottom: 14px; }
+.hist-day-hdr {
+  background: var(--azul); color: white; border-radius: 10px 10px 0 0;
+  padding: 9px 14px; font-size: 0.85rem; font-weight: 800;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.hist-day-hdr .hist-count {
+  background: rgba(255,255,255,0.2); border-radius: 8px;
+  padding: 2px 8px; font-size: 0.75rem;
+}
+.hist-items { background: white; border-radius: 0 0 10px 10px; overflow: hidden; }
+.hist-item {
+  padding: 8px 14px; font-size: 0.82rem;
+  border-bottom: 1px solid var(--cinza);
+  display: flex; align-items: center; gap: 8px;
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-item .hist-time { color: #aaa; font-size: 0.72rem; margin-left: auto; white-space: nowrap; }
+.hist-item .hist-id { font-weight: 800; color: var(--verde); }
+.hist-clear {
+  width: 100%; margin-top: 10px; padding: 10px;
+  background: #fff0f0; color: #c0392b; border: 2px solid #f5c6c6;
+  border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 0.88rem; }
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏆 Figurinhas Copa 2026</h1>
+  <p id="headerSub">Gerenciador de trocas</p>
+  <div class="stats-bar">
+    <div class="stat">❌ Faltando<span id="statFalt">0</span></div>
+    <div class="stat">♻️ Repetidas<span id="statRep">0</span></div>
+    <div class="stat">✅ Álbum<span id="statTotal">—</span></div>
+    <div class="stat">🎯 Hoje<span id="statHoje">0</span></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="setTab('faltando')">❌ Faltando</button>
+  <button class="tab" onclick="setTab('repetidas')">♻️ Repetidas</button>
+  <button class="tab" onclick="setTab('todas')">📋 Todas</button>
+  <button class="tab" onclick="setTab('trocar')">🔄 Trocar<span class="tab-dot" id="dotTrocar"></span></button>
+  <button class="tab" onclick="setTab('historico')">📅 Hist.<span class="tab-dot" id="dotHist"></span></button>
+</div>
+
+<div class="search-wrap" id="searchWrap">
+  <input type="text" id="searchInput" placeholder="🔍 Buscar (ex: BRA1, ARG...)" oninput="renderAll()">
+</div>
+
+<div class="content" id="content"></div>
+
+<!-- ABA TROCAR -->
+<div id="trocaPanel" style="display:none">
+  <div class="troca-wrap">
+    <div class="troca-label">Cole aqui as <strong>repetidas</strong> de outra pessoa:</div>
+    <textarea class="troca-textarea" id="trocaInput"
+      placeholder="Cole qualquer formato — do Álbum de Figurinhas 2026 ou do Figuritas App..."></textarea>
+    <button class="troca-analyze-btn" onclick="analisarTroca()">🔍 Analisar – o que posso ganhar?</button>
+    <button class="troca-clear-btn" onclick="limparTroca()">✕ Limpar</button>
+    <div class="troca-result" id="trocaResult"></div>
+  </div>
+</div>
+
+<!-- ABA HISTÓRICO -->
+<div id="histPanel" style="display:none">
+  <div class="hist-wrap" id="histContent"></div>
+</div>
+
+<!-- FAB compartilhar -->
+<button class="fab" onclick="openShare()" id="fabShare">📤</button>
+
+<!-- SHEET -->
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <h3 id="sheetTitle"></h3>
+  <p id="sheetSub"></p>
+  <div class="sheet-actions" id="sheetActions"></div>
+</div>
+
+<!-- MODAL COMPARTILHAR -->
+<div class="modal" id="shareModal">
+  <div class="modal-box">
+    <h3>📤 Mensagem para trocar</h3>
+    <div class="share-text" id="shareText"></div>
+    <div class="row-btns">
+      <button class="btn btn-plus" onclick="copyShare()">📋 Copiar</button>
+      <button class="btn btn-cancel" onclick="document.getElementById('shareModal').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SEÇÕES
+// ═══════════════════════════════════════════════════════
+function range(p, a, b) {
+  const r = [];
+  for (let i = a; i <= b; i++) r.push(p + i);
+  return r;
+}
+
+const SECTIONS = [
+  { id:'FWC', label:'Copa 2026',         emoji:'🏆', stickers:[...range('FWC',1,4),'FWC5','FWC6',...range('FWC',9,19)] },
+  { id:'MEX', label:'México',            emoji:'🇲🇽', stickers:range('MEX',1,20) },
+  { id:'RSA', label:'África do Sul',     emoji:'🇿🇦', stickers:range('RSA',1,20) },
+  { id:'KOR', label:'Coreia do Sul',     emoji:'🇰🇷', stickers:range('KOR',1,20) },
+  { id:'CZE', label:'Rep. Tcheca',       emoji:'🇨🇿', stickers:range('CZE',1,20) },
+  { id:'CAN', label:'Canadá',            emoji:'🇨🇦', stickers:range('CAN',1,20) },
+  { id:'BIH', label:'Bósnia',            emoji:'🇧🇦', stickers:range('BIH',1,20) },
+  { id:'QAT', label:'Catar',             emoji:'🇶🇦', stickers:range('QAT',1,20) },
+  { id:'SUI', label:'Suíça',             emoji:'🇨🇭', stickers:range('SUI',1,20) },
+  { id:'BRA', label:'Brasil',            emoji:'🇧🇷', stickers:range('BRA',1,20) },
+  { id:'MAR', label:'Marrocos',          emoji:'🇲🇦', stickers:range('MAR',1,20) },
+  { id:'HAI', label:'Haiti',             emoji:'🇭🇹', stickers:range('HAI',1,20) },
+  { id:'SCO', label:'Escócia',           emoji:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', stickers:range('SCO',1,20) },
+  { id:'USA', label:'EUA',               emoji:'🇺🇸', stickers:range('USA',1,20) },
+  { id:'PAR', label:'Paraguai',          emoji:'🇵🇾', stickers:range('PAR',1,20) },
+  { id:'AUS', label:'Austrália',         emoji:'🇦🇺', stickers:range('AUS',1,20) },
+  { id:'TUR', label:'Turquia',           emoji:'🇹🇷', stickers:range('TUR',1,20) },
+  { id:'GER', label:'Alemanha',          emoji:'🇩🇪', stickers:range('GER',1,20) },
+  { id:'CUW', label:'Curaçao',           emoji:'🇨🇼', stickers:range('CUW',1,20) },
+  { id:'CIV', label:'Costa do Marfim',   emoji:'🇨🇮', stickers:range('CIV',1,20) },
+  { id:'ECU', label:'Equador',           emoji:'🇪🇨', stickers:range('ECU',1,20) },
+  { id:'NED', label:'Países Baixos',     emoji:'🇳🇱', stickers:range('NED',1,20) },
+  { id:'JPN', label:'Japão',             emoji:'🇯🇵', stickers:range('JPN',1,20) },
+  { id:'SWE', label:'Suécia',            emoji:'🇸🇪', stickers:range('SWE',1,20) },
+  { id:'TUN', label:'Tunísia',           emoji:'🇹🇳', stickers:range('TUN',1,20) },
+  { id:'BEL', label:'Bélgica',           emoji:'🇧🇪', stickers:range('BEL',1,20) },
+  { id:'EGY', label:'Egito',             emoji:'🇪🇬', stickers:range('EGY',1,20) },
+  { id:'IRN', label:'Irã',               emoji:'🇮🇷', stickers:range('IRN',1,20) },
+  { id:'NZL', label:'Nova Zelândia',     emoji:'🇳🇿', stickers:range('NZL',1,20) },
+  { id:'ESP', label:'Espanha',           emoji:'🇪🇸', stickers:range('ESP',1,20) },
+  { id:'CPV', label:'Cabo Verde',        emoji:'🇨🇻', stickers:range('CPV',1,20) },
+  { id:'KSA', label:'Arábia Saudita',    emoji:'🇸🇦', stickers:range('KSA',1,20) },
+  { id:'URU', label:'Uruguai',           emoji:'🇺🇾', stickers:range('URU',1,20) },
+  { id:'FRA', label:'França',            emoji:'🇫🇷', stickers:range('FRA',1,20) },
+  { id:'SEN', label:'Senegal',           emoji:'🇸🇳', stickers:range('SEN',1,20) },
+  { id:'IRQ', label:'Iraque',            emoji:'🇮🇶', stickers:range('IRQ',1,20) },
+  { id:'NOR', label:'Noruega',           emoji:'🇳🇴', stickers:range('NOR',1,20) },
+  { id:'ARG', label:'Argentina',         emoji:'🇦🇷', stickers:range('ARG',1,20) },
+  { id:'ALG', label:'Argélia',           emoji:'🇩🇿', stickers:range('ALG',1,20) },
+  { id:'AUT', label:'Áustria',           emoji:'🇦🇹', stickers:range('AUT',1,20) },
+  { id:'JOR', label:'Jordânia',          emoji:'🇯🇴', stickers:range('JOR',1,20) },
+  { id:'POR', label:'Portugal',          emoji:'🇵🇹', stickers:range('POR',1,20) },
+  { id:'COD', label:'Congo',             emoji:'🇨🇩', stickers:range('COD',1,20) },
+  { id:'UZB', label:'Uzbequistão',       emoji:'🇺🇿', stickers:range('UZB',1,20) },
+  { id:'COL', label:'Colômbia',          emoji:'🇨🇴', stickers:range('COL',1,20) },
+  { id:'ENG', label:'Inglaterra',        emoji:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', stickers:range('ENG',1,20) },
+  { id:'CRO', label:'Croácia',           emoji:'🇭🇷', stickers:range('CRO',1,20) },
+  { id:'GHA', label:'Gana',              emoji:'🇬🇭', stickers:range('GHA',1,20) },
+  { id:'PAN', label:'Panamá',            emoji:'🇵🇦', stickers:range('PAN',1,20) },
+  { id:'CC',  label:'Coca-Cola',         emoji:'🥤', stickers:range('CC',1,14) },
+  { id:'SPEC',label:'Especiais',         emoji:'⭐', stickers:['REGU','BRON','PRAT','OURO'] },
+];
+
+const ALL_PREFIXES = SECTIONS.map(s => s.id).sort((a,b) => b.length - a.length);
+
+function secOf(id) {
+  return SECTIONS.find(s => id.startsWith(s.id) && /^\d+$/.test(id.slice(s.id.length))) || null;
+}
+
+// ═══════════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════════
+const STORE_KEY  = 'copa2026v4';
+const HIST_KEY   = 'copa2026hist';
+let state = {};   // id -> {status:'f'|'r'|'', qty:N}
+let history = []; // [{id, label, time, date}]
+
+// 863/994 — atualizado 28/06/2026
+const INIT_FALT = `FWC3,FWC5,FWC10,
+MEX1,MEX8,MEX10,MEX16,MEX20,
+RSA1,RSA8,RSA10,RSA12,RSA17,
+KOR1,KOR13,
+CZE1,CZE2,CZE13,
+CAN6,CAN12,CAN16,
+BIH1,BIH2,
+QAT1,QAT2,
+SUI1,SUI17,SUI18,SUI19,SUI20,
+BRA1,BRA19,
+MAR8,MAR19,
+HAI8,
+SCO1,SCO15,SCO18,
+USA1,USA3,USA13,USA14,
+PAR4,PAR12,PAR14,
+AUS3,AUS12,AUS16,
+TUR1,
+CUW1,CUW9,CUW14,
+CIV15,CIV16,CIV18,
+ECU2,ECU14,
+NED2,NED6,NED15,
+JPN5,JPN17,
+SWE9,SWE16,SWE19,
+TUN3,
+BEL1,BEL10,BEL15,BEL19,
+EGY3,EGY5,EGY14,
+IRN2,IRN20,
+NZL1,
+CPV4,CPV5,CPV12,CPV17,
+KSA8,KSA11,KSA16,
+URU3,URU8,
+FRA3,FRA6,
+SEN3,
+IRQ7,IRQ10,IRQ13,IRQ14,
+NOR1,NOR18,NOR19,
+ARG5,ARG8,ARG10,ARG12,ARG17,ARG18,
+ALG9,ALG14,ALG17,
+AUT3,
+JOR5,JOR8,JOR9,JOR11,JOR16,
+POR4,POR10,POR16,
+COD6,COD14,COD16,COD18,
+UZB7,UZB16,
+COL5,COL12,COL20,
+ENG1,ENG5,
+CRO2,CRO10,
+GHA9,GHA14,
+PAN1,PAN4,PAN16,
+FWC10,
+REGU,BRON,PRAT,OURO`.split(',').map(s=>s.trim()).filter(Boolean);
+
+const INIT_REP = {
+  MEX2:1,MEX3:1,MEX9:2,MEX11:1,MEX14:3,MEX15:1,
+  RSA2:2,RSA3:3,RSA6:1,RSA9:1,RSA14:1,RSA15:1,RSA19:1,
+  KOR16:1,KOR20:1,
+  BIH14:1,
+  QAT7:1,QAT9:1,QAT12:1,QAT17:1,
+  SUI2:1,SUI3:3,SUI5:1,SUI6:1,SUI7:3,SUI15:1,
+  MAR5:1,MAR7:1,
+  HAI14:1,
+  SCO6:1,SCO9:1,
+  PAR3:1,PAR11:1,PAR16:1,PAR20:2,
+  AUS17:1,
+  TUR18:1,TUR19:1,
+  GER15:1,GER16:1,
+  CUW2:1,CUW6:1,CUW10:1,CUW12:1,CUW15:1,CUW16:1,CUW19:1,
+  CIV13:1,
+  ECU12:1,ECU16:1,ECU20:1,
+  NED10:1,NED11:1,NED16:2,
+  JPN8:1,JPN9:2,JPN14:1,JPN18:1,
+  SWE2:1,SWE3:1,
+  TUN11:1,TUN14:3,TUN15:1,TUN16:2,TUN17:1,TUN20:1,
+  BEL8:1,BEL12:2,BEL14:1,BEL16:1,BEL18:1,
+  EGY10:1,EGY15:1,
+  IRN5:2,IRN9:1,IRN14:1,IRN17:1,IRN18:1,
+  NZL3:2,NZL7:1,NZL11:1,NZL16:1,NZL20:2,
+  CPV15:1,CPV19:1,
+  KSA5:1,KSA9:1,KSA14:1,KSA18:1,KSA20:1,
+  URU1:1,URU12:1,URU14:1,URU19:1,URU20:1,
+  FRA4:1,FRA13:1,FRA17:1,FRA18:1,
+  SEN2:1,
+  IRQ20:1,
+  ARG13:1,ARG14:1,
+  AUT12:1,AUT14:1,AUT19:1,
+  JOR3:1,JOR6:1,JOR7:1,
+  COD20:1,
+  UZB17:1,
+  ENG4:1,ENG7:1,ENG14:1,ENG17:1,
+  CRO4:1,CRO5:1,CRO12:2,CRO14:1,CRO17:2,
+  GHA4:1,GHA6:1,GHA11:1,GHA12:1,GHA16:1,GHA17:1,GHA18:1,
+  PAN5:1,PAN9:1,PAN18:1,PAN19:1,
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORE_KEY);
+    if (s) { state = JSON.parse(s); }
+    else {
+      state = {};
+      INIT_FALT.forEach(id => { state[id] = {status:'f', qty:0}; });
+      Object.entries(INIT_REP).forEach(([id,qty]) => { state[id] = {status:'r', qty}; });
+    }
+  } catch(e) {
+    state = {};
+    INIT_FALT.forEach(id => { state[id] = {status:'f', qty:0}; });
+    Object.entries(INIT_REP).forEach(([id,qty]) => { state[id] = {status:'r', qty}; });
+  }
+  try {
+    const h = localStorage.getItem(HIST_KEY);
+    history = h ? JSON.parse(h) : [];
+  } catch(e) { history = []; }
+}
+
+function saveState()   { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function saveHistory() { localStorage.setItem(HIST_KEY,  JSON.stringify(history)); }
+function getSt(id)     { return state[id] || {status:'', qty:0}; }
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+let currentTab = 'faltando';
+let collapsed  = {};
+
+function setTab(tab) {
+  currentTab = tab;
+  const names = ['faltando','repetidas','todas','trocar','historico'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i] === tab));
+  document.getElementById('searchInput').value = '';
+
+  const isTrocar = tab === 'trocar';
+  const isHist   = tab === 'historico';
+  const isNormal = !isTrocar && !isHist;
+
+  document.getElementById('searchWrap').style.display  = isNormal ? '' : 'none';
+  document.getElementById('content').style.display     = isNormal ? '' : 'none';
+  document.getElementById('trocaPanel').style.display  = isTrocar ? '' : 'none';
+  document.getElementById('histPanel').style.display   = isHist   ? '' : 'none';
+  document.getElementById('fabShare').style.display    = isNormal ? 'flex' : 'none';
+
+  if (isNormal) renderAll();
+  if (isHist)   renderHistory();
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER PRINCIPAL
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  const q = document.getElementById('searchInput').value.trim().toUpperCase();
+  let html = '', totalFalt = 0, totalRep = 0;
+
+  SECTIONS.forEach(sec => {
+    let stickers = sec.stickers;
+    if (q) stickers = stickers.filter(id => id.includes(q) || sec.label.toUpperCase().includes(q));
+
+    sec.stickers.forEach(id => {
+      const {status} = getSt(id);
+      if (status === 'f') totalFalt++;
+      if (status === 'r') totalRep++;
+    });
+
+    const visible = stickers.filter(id => {
+      const {status} = getSt(id);
+      if (currentTab === 'faltando')  return status === 'f';
+      if (currentTab === 'repetidas') return status === 'r';
+      return true;
+    });
+    if (!visible.length) return;
+
+    const col = collapsed[sec.id];
+    html += `<div class="section${col?' collapsed':''}" id="sec-${sec.id}">
+      <div class="section-header" onclick="toggleSec('${sec.id}')">
+        <span class="section-title">${sec.emoji} ${sec.label}</span>
+        <span style="display:flex;align-items:center;gap:4px">
+          <span class="section-count has">${visible.length}</span>
+          <span class="chevron">▼</span>
+        </span>
+      </div>
+      <div class="stickers-grid">`;
+
+    visible.forEach(id => {
+      const {status, qty} = getSt(id);
+      const cls   = status === 'f' ? 'faltando' : status === 'r' ? 'repetida' : 'ok';
+      const label = id.replace(sec.id, '');
+      const qtd   = (status === 'r' && qty > 1) ? `<span class="qtd">x${qty}</span>` : '';
+      html += `<div class="sticker ${cls}" onclick="openSheet('${id}','${sec.label}','${sec.emoji}')">${label}${qtd}</div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  document.getElementById('content').innerHTML = html ||
+    `<div class="empty-state"><div class="icon">🎉</div>Nada aqui!</div>`;
+
+  const hoje = history.filter(h => h.date === todayStr()).length;
+  document.getElementById('statFalt').textContent  = totalFalt;
+  document.getElementById('statRep').textContent   = totalRep;
+  document.getElementById('statTotal').textContent = `${994-totalFalt}/994`;
+  document.getElementById('statHoje').textContent  = hoje;
+
+  // dot histórico
+  document.getElementById('dotHist').classList.toggle('show', history.length > 0);
+}
+
+function toggleSec(id) {
+  collapsed[id] = !collapsed[id];
+  const el = document.getElementById('sec-'+id);
+  if (el) el.classList.toggle('collapsed', collapsed[id]);
+}
+
+// ═══════════════════════════════════════════════════════
+// BOTTOM SHEET
+// ═══════════════════════════════════════════════════════
+let sheetId = null;
+function openSheet(id, label, emoji) {
+  sheetId = id;
+  const {status, qty} = getSt(id);
+  document.getElementById('sheetTitle').textContent = `${emoji} ${id}`;
+  document.getElementById('sheetSub').textContent   =
+    label + ' · ' + (status==='f'?'❌ Faltando':status==='r'?`♻️ Repetida (x${qty})`:'✅ Tenho');
+  let a = '';
+  if (status !== 'f') a += `<button class="btn btn-faltando" onclick="setStatus('f')">❌ Marcar como FALTANDO</button>`;
+  if (status !== 'r') a += `<button class="btn btn-repetida" onclick="setStatus('r')">♻️ Marcar como REPETIDA</button>`;
+  if (status === 'r') {
+    a += `<button class="btn btn-plus"  onclick="addQty(1)">➕ Mais uma (agora x${qty+1})</button>`;
+    if (qty > 1) a += `<button class="btn btn-minus" onclick="addQty(-1)">➖ Remover uma (x${qty-1})</button>`;
+  }
+  if (status !== '') a += `<button class="btn btn-ok" onclick="setStatus('')">✅ Já tenho / tirar da lista</button>`;
+  a += `<button class="btn btn-cancel" onclick="closeSheet()">Cancelar</button>`;
+  document.getElementById('sheetActions').innerHTML = a;
+  document.getElementById('backdrop').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('backdrop').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+  sheetId = null;
+}
+function setStatus(status) {
+  if (!sheetId) return;
+  const cur = getSt(sheetId);
+  if (status === '') delete state[sheetId];
+  else state[sheetId] = {status, qty: status==='r' ? (cur.status==='r'?cur.qty:1) : 0};
+  saveState(); closeSheet(); renderAll();
+  showToast(status==='f'?'❌ Faltando!':status==='r'?'♻️ Repetida!':'✅ Removido');
+}
+function addQty(delta) {
+  if (!sheetId) return;
+  const cur = getSt(sheetId);
+  state[sheetId] = {status:'r', qty: Math.max(1,(cur.qty||1)+delta)};
+  saveState(); closeSheet(); renderAll();
+  showToast(`♻️ x${state[sheetId].qty}`);
+}
+
+// ═══════════════════════════════════════════════════════
+// HISTÓRICO
+// ═══════════════════════════════════════════════════════
+function todayStr() {
+  return new Date().toLocaleDateString('pt-BR');
+}
+function nowTimeStr() {
+  return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function registrarRecebida(id, label) {
+  history.push({ id, label, time: nowTimeStr(), date: todayStr() });
+  saveHistory();
+  // atualiza dot e stat
+  document.getElementById('dotHist').classList.add('show');
+  const hoje = history.filter(h => h.date === todayStr()).length;
+  document.getElementById('statHoje').textContent = hoje;
+}
+
+function renderHistory() {
+  const wrap = document.getElementById('histContent');
+  if (!history.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="icon">📭</div>Nenhuma figurinha recebida ainda hoje.<br><small>Use o botão ✅ Recebi! na aba Trocar.</small></div>`;
+    return;
+  }
+
+  // Agrupa por data
+  const byDate = {};
+  history.forEach(h => {
+    if (!byDate[h.date]) byDate[h.date] = [];
+    byDate[h.date].push(h);
+  });
+
+  const dates = Object.keys(byDate).reverse();
+  let html = '';
+  dates.forEach(date => {
+    const items = byDate[date].slice().reverse();
+    html += `<div class="hist-day">
+      <div class="hist-day-hdr">
+        📅 ${date}
+        <span class="hist-count">+${items.length} figurinha${items.length!==1?'s':''}</span>
+      </div>
+      <div class="hist-items">`;
+    items.forEach(h => {
+      const sec = secOf(h.id);
+      html += `<div class="hist-item">
+        <span>${sec?sec.emoji:'⭐'}</span>
+        <span class="hist-id">${h.id}</span>
+        <span style="color:#555;font-size:0.8rem">${h.label||''}</span>
+        <span class="hist-time">${h.time}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  html += `<button class="hist-clear" onclick="clearHistory()">🗑️ Limpar histórico completo</button>`;
+  wrap.innerHTML = html;
+}
+
+function clearHistory() {
+  if (!confirm('Apagar todo o histórico?')) return;
+  history = []; saveHistory();
+  document.getElementById('dotHist').classList.remove('show');
+  document.getElementById('statHoje').textContent = '0';
+  renderHistory();
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPARTILHAR
+// ═══════════════════════════════════════════════════════
+function openShare() {
+  let falt=[], rep=[];
+  SECTIONS.forEach(sec => {
+    const f = sec.stickers.filter(id => (state[id]||{}).status==='f');
+    const r = sec.stickers.filter(id => (state[id]||{}).status==='r');
+    if (f.length) falt.push(`${sec.emoji} *${sec.id}*: ${f.map(id=>id.replace(sec.id,'')).join(', ')}`);
+    if (r.length) rep.push(`${sec.emoji} *${sec.id}*: ${r.map(id=>{const q=(state[id]||{}).qty||1;return id.replace(sec.id,'')+(q>1?` (x${q})`:'')} ).join(', ')}`);
+  });
+  const now = todayStr();
+  const tf  = Object.values(state).filter(v=>v.status==='f').length;
+  const tr  = Object.values(state).filter(v=>v.status==='r').length;
+  let txt = `🏆 *Copa 2026 – Figurinhas* (${now})\n📊 Faltando: ${tf} | Repetidas: ${tr}\n\n`;
+  if (falt.length) txt += `❌ *FALTANDO*\n${falt.join('\n')}\n\n`;
+  if (rep.length)  txt += `♻️ *REPETIDAS (para trocar)*\n${rep.join('\n')}`;
+  txt += `\n\n💬 Quer trocar? Me chama! 🤝`;
+  document.getElementById('shareText').textContent = txt;
+  document.getElementById('shareModal').classList.add('open');
+}
+function copyShare() {
+  const txt = document.getElementById('shareText').textContent;
+  navigator.clipboard.writeText(txt)
+    .then(()=>showToast('✅ Copiado!'))
+    .catch(()=>{
+      const el=document.createElement('textarea');
+      el.value=txt; document.body.appendChild(el);
+      el.select(); document.execCommand('copy');
+      document.body.removeChild(el); showToast('✅ Copiado!');
+    });
+}
+
+// ═══════════════════════════════════════════════════════
+// PARSER DE TROCAS
+// ═══════════════════════════════════════════════════════
+function parseStickers(txt) {
+  const found = new Set();
+  // Formato 1: "BRA12 (x2)", "KOR3"
+  const re1 = /\b([A-Z]{2,4}\d{1,2})\s*(?:\(x\d+\))?/g;
+  let m;
+  while ((m=re1.exec(txt))!==null) {
+    const id=m[1];
+    if (ALL_PREFIXES.some(p=>id.startsWith(p)&&/^\d+$/.test(id.slice(p.length)))) found.add(id);
+  }
+  // Formato 2: "BRA 🇧🇷: 4, 5, 12" ou "BRA: 4,5"
+  txt.split('\n').forEach(line => {
+    const h = line.match(/([A-Z]{2,4})\s*[^\w\d:]*:\s*([\d,\s]+)/);
+    if (h && ALL_PREFIXES.includes(h[1])) {
+      (h[2].match(/\d+/g)||[]).forEach(n=>found.add(h[1]+n));
+    }
+  });
+  return [...found];
+}
+
+function groupBySec(ids) {
+  const map = {};
+  ids.forEach(id => {
+    const sec = secOf(id);
+    const key = sec ? sec.id : '?';
+    if (!map[key]) map[key] = {label: sec?`${sec.emoji} ${sec.label}`:'?', ids:[]};
+    map[key].ids.push(id);
+  });
+  return map;
+}
+
+// Chips com botão "Recebi!" — armazenamos a lista atual para re-render parcial
+let currentAnalysis = [];
+
+function analisarTroca() {
+  const txt = document.getElementById('trocaInput').value.trim();
+  if (!txt) { showToast('Cole uma lista primeiro!'); return; }
+  const parsed = parseStickers(txt);
+  if (!parsed.length) {
+    document.getElementById('trocaResult').innerHTML =
+      `<div class="empty-state"><div class="icon">🤔</div>Não encontrei figurinhas.<br><small>Tente outro formato.</small></div>`;
+    return;
+  }
+  currentAnalysis = parsed;
+  renderAnalise();
+}
+
+function renderAnalise() {
+  const parsed   = currentAnalysis;
+  const euPreciso = parsed.filter(id => getSt(id).status === 'f');
+  const elePrecisa= parsed.filter(id => getSt(id).status === 'r');
+  const nenhum    = parsed.filter(id => !['f','r'].includes(getSt(id).status));
+
+  const gEu  = groupBySec(euPreciso);
+  const gEle = groupBySec(elePrecisa);
+
+  function renderEuPreciso(grp) {
+    return Object.values(grp).map(({label, ids}) => `
+      <div class="match-section">
+        <div class="match-section-hdr">${label}<span class="badge">${ids.length}</span></div>
+        <div class="match-chips">
+          ${ids.map(id => {
+            const sec = secOf(id);
+            const num = sec ? id.replace(sec.id,'') : id;
+            const done = getSt(id).status !== 'f';
+            return `<div class="chip-recebi${done?' done':''}" id="chip-${id}">
+              <span class="chip-id">${num}</span>
+              <button class="chip-btn" onclick="receberFigurinha('${id}')" ${done?'disabled':''}>
+                ${done?'✓ ok':'✅ Recebi!'}
+              </button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  function renderEle(grp) {
+    return Object.values(grp).map(({label, ids}) => `
+      <div class="match-section">
+        <div class="match-section-hdr">${label}<span class="badge">${ids.length}</span></div>
+        <div class="match-chips">
+          ${ids.map(id => { const sec=secOf(id); return `<div class="chip-blue">${sec?id.replace(sec.id,''):id}</div>`; }).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  document.getElementById('trocaResult').innerHTML = `
+    <div class="troca-summary">
+      <div class="troca-stat match"><span>${euPreciso.length}</span>Eu preciso ✅</div>
+      <div class="troca-stat ${elePrecisa.length?'miss':'none'}"><span>${elePrecisa.length}</span>Ele tem rep.</div>
+      <div class="troca-stat none"><span>${nenhum.length}</span>Sem uso</div>
+    </div>
+
+    ${euPreciso.length
+      ? `<div style="font-weight:800;font-size:0.88rem;margin-bottom:6px;color:#2e7d32;">✅ EU PRECISO DESSAS — clique em "Recebi!" após pegar:</div>
+         ${renderEuPreciso(gEu)}`
+      : `<div style="background:#fff8e1;border-radius:10px;padding:12px;text-align:center;font-size:0.85rem;color:#856404;margin-bottom:8px;">😕 Nenhuma que eu precise</div>`}
+
+    ${elePrecisa.length
+      ? `<div style="font-weight:800;font-size:0.88rem;margin:10px 0 6px;color:#1565c0;">♻️ ELE TAMBÉM TEM REPETIDAS (que eu já tenho repetida):</div>
+         ${renderEle(gEle)}`
+      : ''}
+
+    <div class="troca-hint">Total analisado: ${parsed.length} figurinha${parsed.length!==1?'s':''}</div>
+  `;
+}
+
+function receberFigurinha(id) {
+  const sec   = secOf(id);
+  const label = sec ? sec.label : id;
+
+  // 1. Remove de faltando
+  delete state[id];
+  saveState();
+
+  // 2. Registra no histórico
+  registrarRecebida(id, label);
+
+  // 3. Atualiza visual do chip sem re-render tudo
+  const chip = document.getElementById('chip-'+id);
+  if (chip) {
+    chip.classList.add('done');
+    chip.querySelector('.chip-btn').textContent = '✓ ok';
+    chip.querySelector('.chip-btn').disabled = true;
+  }
+
+  // 4. Atualiza contadores no header
+  const totalFalt = Object.values(state).filter(v=>v.status==='f').length;
+  const totalRep  = Object.values(state).filter(v=>v.status==='r').length;
+  document.getElementById('statFalt').textContent  = totalFalt;
+  document.getElementById('statTotal').textContent = `${994-totalFalt}/994`;
+
+  showToast(`🎉 ${id} recebida!`);
+}
+
+function limparTroca() {
+  document.getElementById('trocaInput').value = '';
+  document.getElementById('trocaResult').innerHTML = '';
+  currentAnalysis = [];
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════════
+// SERVICE WORKER (PWA)
+// ═══════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+loadState();
+renderAll();
+</script>
+</body>
+</html>
